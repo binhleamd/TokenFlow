@@ -26,7 +26,7 @@ class TokenFlow(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.device = config["device"]
+        self.device = 'mps' if torch.backends.mps.is_available() else 'cuda'
         
         sd_version = config["sd_version"]
         self.sd_version = sd_version
@@ -68,7 +68,8 @@ class TokenFlow(nn.Module):
         self.pnp_guidance_embeds = self.get_text_embeds(pnp_inversion_prompt, pnp_inversion_prompt).chunk(2)[0]
     
     @torch.no_grad()   
-    def prepare_depth_maps(self, model_type='DPT_Large', device='cuda'):
+    def prepare_depth_maps(self, model_type='DPT_Large'):
+        device = self.device
         depth_maps = []
         midas = torch.hub.load("intel-isl/MiDaS", model_type)
         midas.to(device)
