@@ -48,12 +48,12 @@ class Preprocess(nn.Module):
             raise ValueError(f'Stable-diffusion version {self.sd_version} not supported.')
         self.model_key = model_key
         # Create model
-        self.vae = AutoencoderKL.from_pretrained(model_key, subfolder="vae", revision="fp16",
+        self.vae = AutoencoderKL.from_pretrained(model_key, subfolder="vae", variant="fp16",
                                                  torch_dtype=torch.float16).to(self.device)
         self.tokenizer = CLIPTokenizer.from_pretrained(model_key, subfolder="tokenizer")
-        self.text_encoder = CLIPTextModel.from_pretrained(model_key, subfolder="text_encoder", revision="fp16",
+        self.text_encoder = CLIPTextModel.from_pretrained(model_key, subfolder="text_encoder", variant="fp16",
                                                           torch_dtype=torch.float16).to(self.device)
-        self.unet = UNet2DConditionModel.from_pretrained(model_key, subfolder="unet", revision="fp16",
+        self.unet = UNet2DConditionModel.from_pretrained(model_key, subfolder="unet", variant="fp16",
                                                    torch_dtype=torch.float16).to(self.device)
         self.paths, self.frames, self.latents = self.get_data(opt.data_path, opt.n_frames)
         
@@ -149,7 +149,8 @@ class Preprocess(nn.Module):
         return noise_pred
     
     @torch.no_grad()
-    def get_text_embeds(self, prompt, negative_prompt, device="cuda"):
+    def get_text_embeds(self, prompt, negative_prompt):
+        device = self.device
         text_input = self.tokenizer(prompt, padding='max_length', max_length=self.tokenizer.model_max_length,
                                     truncation=True, return_tensors='pt')
         text_embeddings = self.text_encoder(text_input.input_ids.to(device))[0]
@@ -331,7 +332,7 @@ def prep(opt):
 
 
 if __name__ == "__main__":
-    device = 'cuda'
+    device = 'mps' if torch.backends.mps.is_available() else 'cuda'
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str,
                         default='data/woman-running.mp4') 
